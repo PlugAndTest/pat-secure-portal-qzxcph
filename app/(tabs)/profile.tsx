@@ -1,91 +1,251 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
+
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  Alert,
+  Linking,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
+import { IconSymbol } from '@/components/IconSymbol';
 
 export default function ProfileScreen() {
-  const theme = useTheme();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
+  };
+
+  const socialLinks = [
+    {
+      name: 'Website',
+      icon: 'globe',
+      url: 'https://plugandtest.com',
+    },
+    {
+      name: 'Facebook',
+      icon: 'link',
+      url: 'https://facebook.com/plugandtest',
+    },
+    {
+      name: 'Twitter',
+      icon: 'link',
+      url: 'https://twitter.com/plugandtest',
+    },
+    {
+      name: 'LinkedIn',
+      icon: 'link',
+      url: 'https://linkedin.com/company/plugandtest',
+    },
+  ];
+
+  const openLink = (url: string) => {
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'Could not open link');
+    });
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
-        style={styles.container}
+        style={styles.scrollView}
         contentContainerStyle={[
-          styles.contentContainer,
-          Platform.OS !== 'ios' && styles.contentContainerWithTabBar
+          styles.content,
+          Platform.OS !== 'ios' && styles.contentWithTabBar,
         ]}
       >
-        <GlassView style={[
-          styles.profileHeader,
-          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-        ]} glassEffectStyle="regular">
-          <IconSymbol name="person.circle.fill" size={80} color={theme.colors.primary} />
-          <Text style={[styles.name, { color: theme.colors.text }]}>John Doe</Text>
-          <Text style={[styles.email, { color: theme.dark ? '#98989D' : '#666' }]}>john.doe@example.com</Text>
-        </GlassView>
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <IconSymbol name="person.circle.fill" size={80} color={colors.primary} />
+          </View>
+          <Text style={styles.userName}>{user?.name}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+        </View>
 
-        <GlassView style={[
-          styles.section,
-          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-        ]} glassEffectStyle="regular">
+        <View style={commonStyles.card}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
           <View style={styles.infoRow}>
-            <IconSymbol name="phone.fill" size={20} color={theme.dark ? '#98989D' : '#666'} />
-            <Text style={[styles.infoText, { color: theme.colors.text }]}>+1 (555) 123-4567</Text>
+            <Text style={styles.infoLabel}>Company:</Text>
+            <Text style={styles.infoValue}>{user?.company || 'N/A'}</Text>
           </View>
           <View style={styles.infoRow}>
-            <IconSymbol name="location.fill" size={20} color={theme.dark ? '#98989D' : '#666'} />
-            <Text style={[styles.infoText, { color: theme.colors.text }]}>San Francisco, CA</Text>
+            <Text style={styles.infoLabel}>Phone:</Text>
+            <Text style={styles.infoValue}>{user?.phone || 'N/A'}</Text>
           </View>
-        </GlassView>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Account Type:</Text>
+            <Text style={styles.infoValue}>
+              {user?.role === 'admin' ? 'Administrator' : 'Client'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={commonStyles.card}>
+          <Text style={styles.sectionTitle}>Follow Us</Text>
+          <Text style={styles.sectionSubtitle}>
+            Stay connected with Plug And Test
+          </Text>
+          <View style={styles.socialLinks}>
+            {socialLinks.map((link, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.socialLink}
+                onPress={() => openLink(link.url)}
+              >
+                <IconSymbol name={link.icon} size={20} color={colors.primary} />
+                <Text style={styles.socialLinkText}>{link.name}</Text>
+                <IconSymbol
+                  name="chevron.right"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={commonStyles.card}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <TouchableOpacity
+            style={styles.supportItem}
+            onPress={() => Alert.alert('Help', 'Help documentation coming soon')}
+          >
+            <IconSymbol name="questionmark.circle" size={20} color={colors.primary} />
+            <Text style={styles.supportText}>Help & FAQ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.supportItem}
+            onPress={() => Linking.openURL('mailto:support@plugandtest.com')}
+          >
+            <IconSymbol name="envelope" size={20} color={colors.primary} />
+            <Text style={styles.supportText}>Contact Support</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[buttonStyles.secondary, styles.logoutButton]}
+          onPress={handleLogout}
+        >
+          <Text style={buttonStyles.text}>Logout</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.version}>Version 1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    // backgroundColor handled dynamically
-  },
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  contentContainer: {
+  scrollView: {
+    flex: 1,
+  },
+  content: {
     padding: 20,
   },
-  contentContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
+  contentWithTabBar: {
+    paddingBottom: 100,
   },
   profileHeader: {
     alignItems: 'center',
-    borderRadius: 12,
-    padding: 32,
+    marginBottom: 24,
+  },
+  avatarContainer: {
     marginBottom: 16,
-    gap: 12,
   },
-  name: {
+  userName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    // color handled dynamically
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
   },
-  email: {
+  userEmail: {
     fontSize: 16,
-    // color handled dynamically
+    color: colors.textSecondary,
   },
-  section: {
-    borderRadius: 12,
-    padding: 20,
-    gap: 12,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 16,
   },
   infoRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  socialLinks: {
+    gap: 8,
+  },
+  socialLink: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
     gap: 12,
   },
-  infoText: {
+  socialLinkText: {
+    flex: 1,
     fontSize: 16,
-    // color handled dynamically
+    color: colors.text,
+  },
+  supportItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  supportText: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  logoutButton: {
+    marginTop: 24,
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 24,
   },
 });
